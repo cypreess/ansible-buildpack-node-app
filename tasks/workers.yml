@@ -2,4 +2,5 @@
 - include: workers/nodejs.yml
 - include: workers/users_and_groups.yml
 - include: workers/source_code.yml
+- include: workers/build_node.yml
 - include: workers/web.yml

@@ -1,0 +1,19 @@
+---
+
+- apt: name=git state=present force=yes
+
+
+- name: Npm install
+  become: yes
+  become_user: "{{ application_user }}"
+  npm:
+    path: "{{ application_source_path }}"
+  tags:
+    - deploy
+
+- name: Build nodejs project
+  become: yes
+  become_user: "{{ application_user }}"
+  command: chdir={{ application_source_path }} npm run build
+  tags:
+    - deploy
