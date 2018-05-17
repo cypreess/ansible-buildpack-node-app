@@ -1,0 +1,61 @@
+---
+- import_role:
+    name: cypreess.nginx
+
+- name: Download certbot
+  get_url: url=https://dl.eff.org/certbot-auto dest=/usr/local/bin/certbot-auto mode=0755
+
+
+- name: Search for letsencrypt certificates
+  stat: path={{ application_config_path }}/ssl/live/{{ application_domain }}/
+  register: p
+
+- name: Create the certbot Nginx configuration file
+  become: yes
+  become_user: "{{ application_user }}"
+  template: src=nginx-certbot.j2
+            dest={{ application_config_path }}/nginx.conf
+  when: not p.stat.exists
+  notify: reload nginx
+
+- name: Ensure that the application site is enabled
+  file: src={{ application_config_path }}/nginx.conf
+        dest=/etc/nginx/sites-enabled/{{ application_name }}
+        state=link
+  when: not p.stat.exists
+  notify: reload nginx
+
+- meta: flush_handlers
+
+- name: Install certbot and generate cert
+  command: "/usr/local/bin/certbot-auto certonly --noninteractive --agree-tos --webroot --email {{ application_admin_email }} -w {{ application_www_path }} -d {{ application_domain }} --config-dir {{ application_config_path }}/ssl/ --logs-dir {{ application_log_path }}"
+  when: not p.stat.exists
+  args:
+    creates: "{{ application_config_path }}/ssl/live/{{ application_domain }}/"
+
+- name: Ensure a cron job to auto-renew the cert exists
+  cron: name="daily auto renew {{ application_name }} cert"
+        special_time=daily
+        job="/usr/local/bin/certbot-auto renew  --noninteractive --agree-tos --webroot --no-self-upgrade --quiet  --config-dir {{ application_config_path }}/ssl/ --logs-dir {{ application_log_path }} -w {{ application_www_path }}"
+        state=present
+
+- file: dest={{ application_config_path }}/ssl owner={{ application_user }} group={{ application_group }} recurse=yes
+
+- name: Ensure that a strong Diffie-Hellman group is used
+  command: openssl dhparam -out /etc/ssl/certs/dhparams.pem 2048 creates=/etc/ssl/certs/dhparams.pem
+
+- name: Create the Nginx configuration file
+  become: yes
+  become_user: "{{ application_user }}"
+  template: src={{ nginx_template_path }}
+            dest={{ application_config_path }}/nginx.conf
+  notify: reload nginx
+
+- name: Ensure that the application site is enabled
+  file: src={{ application_config_path }}/nginx.conf
+        dest=/etc/nginx/sites-enabled/{{ application_name }}
+        state=link
+  notify: reload nginx
+
+- name: Ensure Nginx service is started
+  service: name=nginx state=started enabled=yes

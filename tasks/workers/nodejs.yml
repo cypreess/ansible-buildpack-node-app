@@ -1,0 +1,4 @@
+---
+- name: Provision nodejs
+  import_role:
+    name: Stouts.nodejs

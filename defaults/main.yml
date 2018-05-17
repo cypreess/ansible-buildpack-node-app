@@ -1,0 +1,26 @@
+---
+application_user: "{{ application_name }}"
+application_group: "{{ application_user }}"
+application_home: "/home/{{ application_user }}"
+application_source_path: "{{ application_home }}/src"
+application_bin_path: "{{ application_home }}/bin"
+application_log_path: "{{ application_home }}/log"
+application_run_path: "{{ application_home }}/run"
+application_config_path: "{{ application_home }}/config"
+application_www_path: "{{ application_home }}/www"
+application_domain: "{{ application_name }}.{{ groups['db'].0 }}"
+
+
+git_branch: master
+
+default_environment_variables:
+  DOMAIN: "{{ application_domain }}"
+
+environment_variables: {}
+
+
+ansible_python_interpreter: /usr/bin/python3
+base_python_package: "{{ ansible_python_interpreter | default('/usr/bin/python') | basename }}"
+
+
+nginx_template_path: nginx.j2
