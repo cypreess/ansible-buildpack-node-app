@@ -1,11 +1,3 @@
-upstream {{ application_name }}_wsgi_server {
-  # fail_timeout=0 means we always retry an upstream even if it failed
-  # to return a good HTTP response (in case the Unicorn master nukes a
-  # single worker for timing out).
-
-  server unix:{{ application_run_path }}/gunicorn.sock fail_timeout=0;
-}
-
 server {
     listen      80;
     server_name {{ application_domain }};
@@ -36,40 +28,8 @@ server {
         alias   {{ application_www_path }}/.well-known/;
     }
 
-    location /static/ {
-        alias   {{ application_www_path }}/static/;
-    }
-
-    location /media/ {
-        alias   {{ application_www_path }}/media/;
-    }
-
     location / {
-        if (-f {{ application_www_path }}/maintenance_on.html) {
-            return 503;
-        }
-
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
-        proxy_set_header Host $http_host;
-        proxy_redirect off;
-
-        # Try to serve static files from nginx, no point in making an
-        # *application* server like Unicorn/Rainbows! serve static files.
-        if (!-f $request_filename) {
-            proxy_pass http://{{ application_name }}_wsgi_server;
-            break;
-        }
+        alias   {{ application_source_path }}/build/;
     }
 
-    # Error pages
-    error_page 500 502 504 /500.html;
-    location = /500.html {
-        root {{ application_templates_500 }}/;
-    }
-
-    error_page 503 /maintenance_on.html;
-    location = /maintenance_on.html {
-        root {{ application_www_path }}/;
-    }
 }
