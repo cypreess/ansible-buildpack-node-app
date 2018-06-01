@@ -12,3 +12,13 @@
        force=yes
   tags:
     - deploy
+
+- name: Create env file
+  template: src=env.j2
+            dest={{ application_source_path }}/.env
+            owner={{ application_user }}
+            group={{ application_group }}
+            mode=0640
+            backup=no
+  tags:
+    - deploy

@@ -18,6 +18,7 @@ default_environment_variables:
 
 environment_variables: {}
 
+combined_environment_variables: "{{ default_environment_variables | combine(environment_variables) }}"
 
 ansible_python_interpreter: /usr/bin/python3
 base_python_package: "{{ ansible_python_interpreter | default('/usr/bin/python') | basename }}"
